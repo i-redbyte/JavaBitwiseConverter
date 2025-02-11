@@ -1,6 +1,5 @@
 package org.redbyte
 
-import java.util.*
 
 class BitwiseConverter(private val javaCode: String) {
     private val tokens = mutableListOf<String>()
@@ -11,15 +10,15 @@ class BitwiseConverter(private val javaCode: String) {
     }
 
     private fun tokenize() {
-        val tokenizer = StringTokenizer(javaCode, " \t\n\r(){}[]<>=+-*/%&|^~!,;", true)
-        while (tokenizer.hasMoreTokens()) {
-            val token = tokenizer.nextToken().trim()
-            if (token.isNotEmpty()) {
-                tokens.add(token)
-            }
-        }
+        val regex = Regex(
+            """(\s+)|(>>>|<<|>>)|([(){}[\\]<>=+*/%&|^~!,;-])|(\d+)|(\w+)"""
+        )
+        tokens.addAll(
+            regex.findAll(javaCode)
+                .map { it.value }
+                .filter { it.isNotBlank() }
+        )
     }
-
     private fun currentToken(): String? {
         return if (currentPosition < tokens.size) tokens[currentPosition] else null
     }
@@ -67,17 +66,12 @@ class BitwiseConverter(private val javaCode: String) {
     private fun parseShift(): ExprNode {
         var node = parseUnary()
         while (true) {
-            val (current, next) = currentAndNextToken()
-            if (
-                current != null
-                && next != null
-                && (current == next && (next == ">" || (next == "<")))
-            ) {
-                consumeToken()
-                consumeToken()
-                node = BinaryOp("$current$next", node, parseUnary())
-            } else {
-                break
+            when (val token = currentToken()) {
+                "<<", ">>", ">>>" -> {
+                    consumeToken()
+                    node = BinaryOp(token, node, parseUnary())
+                }
+                else -> break
             }
         }
         return node
