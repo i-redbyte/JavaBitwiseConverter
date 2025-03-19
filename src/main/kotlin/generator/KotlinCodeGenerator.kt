@@ -79,18 +79,24 @@ class KotlinCodeGenerator : ExprVisitor {
                 else -> node.operator
             }
         )
+
         else -> Int.MIN_VALUE
     }
 
     private fun wrapOperand(node: ExprNode, parentPrecedence: Int): String {
         val currentPrecedence = getNodePrecedence(node)
         val expr = node.accept(this)
-        return if (currentPrecedence < parentPrecedence ||
-            (node is BinaryOp && currentPrecedence == parentPrecedence)) {
-            "($expr)"
-        } else {
-            expr
+
+        if (node is Identifier || node is NumberLiteral) {
+            return expr
+        }
+
+        return when {
+            currentPrecedence < parentPrecedence -> "($expr)"
+            currentPrecedence == parentPrecedence && node is BinaryOp -> expr
+            else -> "($expr)"
         }
     }
+
 }
 
