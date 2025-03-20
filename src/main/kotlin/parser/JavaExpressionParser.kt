@@ -105,8 +105,12 @@ class JavaExpressionParser : Parser {
 
             else -> {
                 consume()
-                if (token.value.matches(Regex("\\d+"))) NumberLiteral(token.value.toInt())
-                else Identifier(token.value)
+                when {
+                    token.value.matches(Regex("\\d+")) -> {
+                        NumberLiteral(token.value.toInt())
+                    }
+                    else -> Identifier(token.value)
+                }
             }
         }
     }

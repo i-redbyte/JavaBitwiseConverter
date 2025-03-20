@@ -3,7 +3,7 @@ package org.redbyte.tokenizer
 class JavaTokenizer : Tokenizer {
     override fun tokenize(code: String): List<Token> {
         val regex = Regex(
-            """(\s+)|(>>>=|<<=|>>=|\^=|\|=|&=|>>>|<<|>>|&&|\|\||[(){}[\\]<>=+*/%&|^~!,;-])|(\d+)|(\w+)"""
+            """(\s+)|(>>>=|<<=|>>=|\^=|\|=|&=|>>>|<<|>>|&&|\|\||[(){}[\\]<>=+*/%&|^~!,;-])|(0[xX][0-9a-fA-F]+)|(\d+)|(\w+)"""
         )
 
         val tokens = mutableListOf<Token>()
