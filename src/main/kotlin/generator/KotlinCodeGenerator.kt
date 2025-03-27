@@ -25,7 +25,7 @@ class KotlinCodeGenerator : ExprVisitor {
     }
 
     override fun visit(node: UnaryOp): String {
-        val operand = wrapOperand(node.operand, getPriority("unary"))
+        val operand = wrapOperand(node.operand, getPriority("unary"), isRightOperand = true)
         return when (node.operator) {
             "~" -> "$operand.inv()"
             else -> "${node.operator}$operand"
@@ -43,8 +43,8 @@ class KotlinCodeGenerator : ExprVisitor {
             else -> node.operator
         }
         val opPriority = getPriority(kotlinOp)
-        val left = wrapOperand(node.left, opPriority)
-        val right = wrapOperand(node.right, opPriority)
+        val left = wrapOperand(node.left, opPriority, isRightOperand = false)
+        val right = wrapOperand(node.right, opPriority, isRightOperand = true)
         return "$left $kotlinOp $right"
     }
 
@@ -58,7 +58,8 @@ class KotlinCodeGenerator : ExprVisitor {
             ">>>" -> "ushr"
             else -> node.operator
         }
-        val value = wrapOperand(node.value, getPriority(kotlinOp))
+        val opPriority = getPriority(kotlinOp)
+        val value = wrapOperand(node.value, opPriority, isRightOperand = true)
         return "${node.target.accept(this)} = ${node.target.accept(this)} $kotlinOp $value"
     }
 
@@ -79,24 +80,22 @@ class KotlinCodeGenerator : ExprVisitor {
                 else -> node.operator
             }
         )
-
         else -> Int.MIN_VALUE
     }
 
-    private fun wrapOperand(node: ExprNode, parentPrecedence: Int): String {
+    private fun wrapOperand(node: ExprNode, parentPrecedence: Int, isRightOperand: Boolean = false): String {
         val currentPrecedence = getNodePrecedence(node)
         val expr = node.accept(this)
 
-        if (node is Identifier || node is NumberLiteral) {
+        if (node is Identifier || node is NumberLiteral || node is Parenthesized) {
             return expr
         }
 
         return when {
             currentPrecedence < parentPrecedence -> "($expr)"
-            currentPrecedence == parentPrecedence && node is BinaryOp -> expr
-            else -> "($expr)"
+            currentPrecedence == parentPrecedence && node is BinaryOp -> if (isRightOperand) "($expr)" else expr
+            currentPrecedence > parentPrecedence -> if (isRightOperand) "($expr)" else expr
+            else -> expr
         }
     }
-
 }
-
